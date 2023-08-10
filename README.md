@@ -1,4 +1,4 @@
-Title: Regional Growth in the EU-15 countries.
+##Title: Regional Growth in the EU-15 countries.
 
 Description: First, I employ a clustering algorithm to show natural grouping of NUTS-2 level regions with respect to their GDP per capita growth. 
 Secondly, I investigate spatial autocorrelation among regions. The ML algorithm enables different paths for transition, for example different technology 
