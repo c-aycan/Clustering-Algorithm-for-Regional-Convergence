@@ -3,9 +3,8 @@
 ## Description: 
 
 First, I employ a clustering algorithm to show natural grouping of NUTS-2 level regions with respect to their GDP per capita growth. 
-Secondly, I investigate spatial autocorrelation among regions. The ML algorithm enables different paths for transition, for example different technology 
-growth rates or convergence speeds are made possible. While global and local Moran's I methodology captures interdependencies and co-movement of regional 
-growth based on their location. 
+The ML algorithm enables different paths for transition, for example different technology growth rates or convergence speeds are made possible. 
+Secondly, I investigate spatial autocorrelation among regions. For this global and local Moran's I methodology captures interdependencies and co-movements of regional growth based on location. 
 
 ## Objective: 
 
