@@ -37,9 +37,6 @@ names(t_interp_pop) <- t_interp_pop %>% slice(1) %>% unlist()
 t_interp_pop <- t_interp_pop [- 1, ]
 
 
-
-
--------------------
 -------------------------------------------------------------------------------
 #Philips and Sul's Club Convergence
 install.packages("mFilter")
@@ -69,6 +66,9 @@ round(estimateMod(H, time_trim=1/3, HACmethod = "FQSB"), 3)
 ### Cluster Countries using GDP from year 1970 to year 2003, with 2003 as reference year
 clubs <- findClubs(filteredGDP, dataCols=2:35, unit_names = 1, refCol=35,
 time_trim=1/3, cstar=0, HACmethod = 'FQSB')
+
+
+
 --------------------------------------------------
 ##Materials of the Club Convergence package
 
@@ -87,11 +87,6 @@ plot(clubs, avgTP = FALSE, nrows = 4, ncols = 2, plot_args = list(type='l'))
 plot(clubs, clubs=NULL, avgTP = TRUE, legend=TRUE, plot_args = list(type='o'))
 # Merge clusters using Phillips and Sul (2009) method
 mclubs <- mergeClubs(clubs, mergeMethod='PS')
-
-```{r}
-library(purrr)
-library(knitr)
-```
 
 
 
@@ -112,6 +107,9 @@ round(estimateMod(H, time_trim=1/3, HACmethod = "FQSB"), 3)
 print(H1)
 clubs1 <- findClubs(filteredGDPpercap, dataCols=2:117, unit_names = 1, refCol=117,
 time_trim=1/3, cstar=0, HACmethod = 'FQSB')
+
+
+
 ----------------------------------------------------
 ## EU-flev algorithm application
 ##take log
@@ -132,6 +130,8 @@ time_trim=1/3, cstar=0, HACmethod = 'FQSB')
 summary(clubs.century)
 
 
+
+
 -----------------------------------------------------------
 ## EU-flev-extrapolated
 
@@ -147,8 +147,6 @@ H2 <- computeH(filteredGDPpercap[,-1], quantity = "H")
 round(estimateMod(H2, time_trim=1/3, HACmethod = "FQSB"), 3)
 ##find clubs
 clubs.1900_2015 <- findClubs(filteredGDPpercap, dataCols=2:117, unit_names = 1, refCol=117, time_trim=1/3, cstar=0, HACmethod = 'FQSB')
------------------------------------------
-
 
 
 
@@ -202,8 +200,8 @@ betaconv_ols <- betaconv.ols (EU_flev$"1900",
                                beta.bgridType = "solid", print.results = TRUE)
                                
 
-------------------------------------------------------
 
+------------------------------------------------------
 ##print data frames to pdf
 
 library(gridExtra)
@@ -255,6 +253,7 @@ beta.bgridType = "solid", print.results = TRUE)
 install.packages("REAT")
 library("REAT")
 betaconv.speed(beta, tinterval)
+
 
 
 --------------------------------------------------------------
