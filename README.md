@@ -1,4 +1,4 @@
-# Regional Growth in the EU-15 countries.
+# Regional Growth in the EU-15 countries
 
 ## Description: 
 
