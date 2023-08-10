@@ -7,12 +7,12 @@ Secondly, I investigate spatial autocorrelation among regions. The ML algorithm 
 growth rates or convergence speeds are made possible. While global and local Moran's I methodology captures interdependencies and co-movement of regional 
 growth based on their location. 
 
-### Objective: 
+## Objective: 
 
 It is to understand why some regions are richer and others are less so in the long-run perspective. Testing whether capitals and borders matter 
 quantitatively when determining the regions' income performances.
 
-#### Technologies: 
+## Technologies: 
 R Studio & libraries:
 dplyr,
 tidyverse,
