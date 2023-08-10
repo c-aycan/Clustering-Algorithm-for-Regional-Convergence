@@ -1,0 +1,211 @@
+install.packages("sp")
+install.packages("tmap")
+install.packages("spdep")
+install.packages("sf")
+
+library("spdep")
+library("tmap")
+library("sp")
+library("sf")
+
+
+##clean the regions without neighbours
+##(sardegna, corse, sicilia, illes balears, canarias, Alands)
+mregion_filtered1_dropped <- mregion_filtered1[-c(60, 92, 103, 117, 120, 125), ]
+
+##clean the divergent units(divergent unit club no per period; 11,7,3,none)
+mreg1.nodiv <-subset(mregion_filtered1_dropped, Club_Membership!="11")
+
+##assign neighbor definition: here contiguous (alt:check 'rooks')
+nb <- poly2nb(mregion_filtered1_dropped, queen=TRUE)
+
+##assign weights to each neighboring polygon: style W=equal weight
+lw <- nb2listw(nb, style="W", zero.policy=TRUE)
+
+##compute average neighbor income value (lagged regions) 
+Inc.lag <- lag.listw(lw, mregion_filtered1_dropped$Club_Membership)
+
+##regression model
+M <- lm(Inc.lag ~ mregion_filtered1_dropped$Club_Membership)
+
+
+plot( Inc.lag ~ mregion_filtered1_dropped$Club_Membership, xlab="Actual Membership", ylab="Lagged Value",  pch=20, asp=1, las=1)
+
+abline(lm(Inc.lag ~ mregion_filtered1_dropped$Club_Membership), col="red")
+
+
+##plot all four......
+par(mfrow=c(2,2))
+
+plot( Inc.lag1 ~ mreg1.nodiv$Club_Membership, xlab="Actual Membership", ylab="Neighbors' Lagged Value", pch=20, asp=1, las=1)
+
+abline(lm(Inc.lag1 ~ mreg1.nodiv$Club_Membership), col="red")
+
+title("1900-1910")
+
+
+
+##slope= Moran's coefficient
+coef(M)[2]
+##test
+moran.test(mregion_filtered1_dropped$Club_Membership,lw)
+
+##Monte Carlo test
+MC<- moran.mc(mregion_filtered1_dropped$Club_Membership, lw, nsim=599)
+# View results (including p-value)
+MC
+# Plot the distribution (note that this is a density plot instead of a histogram)
+plot(MC, main="", las=1)
+
+
+##plot all 4 MC density together
+par(mfrow=c(2,2))
+plot(MC1, main="1900-1910", xlab="Simulated correlation coefficients", ylab="Density", las=1)
+plot(MC2, main="1938-1950", xlab="Simulated correlation coefficients", ylab="Density", las=1)
+plot(MC4, main="1980-2000", xlab="Simulated correlation coefficients", ylab="Density", las=1)
+plot(MC5, main="2000-2015", xlab="Simulated correlation coefficients", ylab="Density", las=1)
+
+-----------------------------------------------------
+##extract coordinates
+xy <- sf::st_centroid(mregion_filtered1_dropped)
+xy <- xy$geometry
+
+##plot the links between neighbors
+plot(st_geometry(mregion_filtered1_dropped), border='grey', lwd=2)
+plot(nb, xy, col='red', lwd=1, add=TRUE)
+
+-------------------------------------------------------
+##Local Moran's I for every region
+mregion_filtered1_dropped$localmoran <- localmoran(mregion_filtered1_dropped$Club_Membership, lw)[,1]
+
+##then map it
+tm_shape(mregion_filtered1_dropped,unit='km') + 
+     tm_polygons(col='localmoran',title="Local Morans I",legend.format=list(flag="+")) + tm_style("col_blind")
+tm_scale_bar(width=0.15) +
+     tm_layout(legend.position = c("left","bottom"),
+               legend.text.size=0.4)
+               
+##create local p-values
+mregion_filtered1_dropped$pval <- localmoran(mregion_filtered1_dropped$Club_Membership,lw)[,5]
+
+##then map it
+tm_shape(mregion_filtered1_dropped,unit='km') +
+tm_polygons(col='pval',title="p-value",breaks=c(0,0.01,0.05,0.10,1),
+border.col = "black",
+palette = "-Greens") +
+tm_scale_bar(width=0.15) +
+tm_layout(legend.position = c("left","top"))
+
+---------------------------------------------------------------------
+##LISA               
+breaks = c(0, 1, 2, 3, 4, 5)
+LISA1<-tm_shape(mregion_filtered1_dropped) + tm_fill(col = "localmoran", breaks = breaks, palette=  c("white","red","blue",rgb(0,0,1,alpha=0.4),rgb(1,0,0,alpha=0.4)), labels = c("Not significant", "High-High","Low-Low","Low-High","High-Low"), title="")+
+tm_legend(text.size = 1)  +
+ tm_scale_bar(position = c("LEFT", "BOTTOM"),text.size = 1.0)+
+ tm_compass(type = "8star",   position = c("RIGHT", "BOTTOM"),      show.labels = 2,   text.size = 0.5)+
+tm_borders(alpha=.5) +
+tm_layout( frame = FALSE,  title = "LISA with the R p-values ")
+      tmap_arrange(LISA1)
+
+------------------------------------------------------------------
+##Border effects analysis
+
+##drop divergents
+mreg1.nodiv <-subset(mregion_filtered1_dropped, Club_Membership!="11")
+mreg2.nodiv <-subset(mregion_filtered2_dropped, Club_Membership!="7")
+mreg4.nodiv <-subset(mregion_filtered4_dropped, Club_Membership!="3")
+
+# list all border regions
+border_regions <- c("FRE1", "FRF2", "FRF3", "FRF1", "FRC2", "FRK2", "FRL0", "ES21", "ES22", "ES24", "ES51", "ES11", "ES41", "ES43", "ES61", "PT15", "PT18", "PT16", "PT11", "ITC1", "ITC2", "ITC3", "ITC4", "ITH1", "ITH3", "ITH4", "AT34", "AT33", "AT32", "AT21", "AT31", "AT22", "AT12", "AT11", "DE13", "DE14", "DE27", "DE21", "DE22", "DE23", "DE24", "DED4", "DED2", "DE40", "DE80", "DEF0", "DE94", "DEA3", "DEA1", "DEA2", "DEB2", "DEC0", "DEB3", "DE12", "NL11", "NL13", "NL21", "NL22", "NL42", "NL41", "NL34", "BE25", "BE32", "BE35", "BE34", "BE33", "BE22", "BE21", "BE23", "LU00", "CH01", "CH02", "CH03", "CH04", "CH0", "CH07", "DK03", "SE23", "SE31", "SE32", "SE33", "FI1D", "NO02", "NO06", "NO07", "NO03")
+
+##filter for border regions
+mborder1 <- mreg1.nodiv %>% filter(NUTS_ID %in% border_regions2)
+##period 5 has no divergent so initial dataframe will do:
+mborder5 <- mregion_filtered5_dropped %>% filter(NUTS_ID %in% border_regions2)
+
+##filter for non-border regions
+nonborder1 <- mreg1.nodiv %>% anti_join(border_regions, by= "NUTS_ID")
+nonborder5 <- mregion_filtered5_dropped %>% anti_join(border_regions, by= "NUTS_ID")
+
+---------------------
+##Exclude capital regions for border effect analysis
+
+#create and clean dataframe
+capital_regions <- c("FR10","LU00", "ES30","PT17", "DK01", "FI1B", "SE11", "CH04", "AT13", "BE10", "ITI4", "NL32", "NO01", "DE30")
+
+capital_regions.df <- as.data.frame(capital_regions)
+colnames(capital_regions.df) <- c("NUTS_ID")
+
+#exclude capital regions from border and non-border group
+mborder1_noncap <- mborder1 %>% anti_join(capital_regions.df, by= "NUTS_ID")
+nonborder1_noncap <- nonborder1 %>% anti_join(capital_regions.df, by= "NUTS_ID")
+
+##means for local moran
+mean(mborder_reg1_dropped$localmoran)
+mean(nonborder_reg1_dropped$localmoran)
+---------------------------------------------------------------
+
+##LISA using GeoDa package
+library(ggplot2)
+library(sf)
+library(rgeoda)
+
+# [optional] add variable lisa to dataframe
+shape_lisa1 <- mregion_filtered2_dropped %>%  mutate(lisa = categorize_lisa(Club_Membership, Inc.lag))
+
+
+# create weights object
+queen_w <- queen_weights(mregion_filtered1_dropped)
+
+# calculate LISA as per GEODA
+lisa <- local_moran(queen_w, mregion_filtered1_dropped["Club_Membership"])
+
+# process results
+mregion_filtered1_dropped$cluster <- as.factor(lisa$GetClusterIndicators())
+levels(mregion_filtered1_dropped$cluster) <- lisa$GetLabels()
+
+# assign custome colors
+colors <- rep(c("white", "blue", "red", "orange", "lightblue"), length.out = groups)
+
+# A visual overview
+ggplot(data = mregion_filtered1_dropped) +
+geom_sf(aes(fill = cluster)) + scale_fill_manual(values = colors) + ggtitle("LISA map for XXXX")
+
+----------------------------------------------------------------
+## A t-test for equality of means:
+
+T1 = t.test(mborder1$localmoran,nonborder1$localmoran,var.equal=FALSE)
+
+##show distribution?
+
+library("jmuOutlier")
+
+## Check p-values: Permutation (Randomization) test: 
+perm.test(mborder1_lmoran, nonborder1_lmoran, conf.int=TRUE, exact=TRUE)
+
+
+------------------------------------------------------------------
+##capital regions effect
+
+#all capital regions
+capital_regions <- c("FR10","LU00", "ES30","PT17", "DK01", "FI1B", "SE11", "CH04", "AT13", "BE10", "ITI4", "NL32", "NO01", "DE30")
+
+# create a dframe: NUTS, lmoran and significance
+lmoran_regions4 <- data.frame(mregion_filtered4_dropped$NUTS_ID, mregion_filtered4_dropped$localmoran, mregion_filtered4_dropped$cluster)
+
+colnames(lmoran_regions4) <- c("NUTS_ID", "localmoran", "cluster")
+
+##filter for capital regions (need be "chr" object)
+capital1 <- mreg1.nodiv %>% filter(NUTS_ID %in% capital_regions)
+
+# exclude capital regions
+noncap_reg4_dropped <- lmoran_regions4 %>% anti_join(capital_regions.df, by= "NUTS_ID")
+## For 1980-2000: use below non-capital group and capital group (berlin is included as non-capital)
+noncap_reg4_dropped
+cap_reg4_lmoran
+
+# [optional] filter for significant lmoran's only
+cap4_lmoran_sign <-subset(cap_reg4_lmoran, cluster!="Not significant")
+
+## check t-test
+z = t.test(mborder1_lmoran,nonborder1_lmoran,var.equal=FALSE)

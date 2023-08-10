@@ -1,0 +1,265 @@
+
+-------------------------------------------------------------------------------
+Prepare Imputations of Regional GDP shares:
+
+#assign a df 
+try <- pop_NA
+#convert to numeric
+try <- sapply( try, as.numeric )
+#take transpose and delete first row
+t_pop_NA <- t(try)
+t_pop_NAtry <- t_pop_NA[- 1, ]
+
+#create imputations
+
+library(imputeTS)
+
+interpolated.regional.population <- na.interpolation(t_pop_NAtry, option = "linear")
+
+#check if shares total to 1
+rowSums(x)
+
+# export interpolated datasets to excel
+library("writexl")
+
+View(interpolated.regional.population)
+int.pop <- t(interpolated.regional.population)
+View(int.pop)
+int.pop = as.data.frame(int.pop)
+write_xlsx(int.pop,"E:\\New Desktop\\interpolated.regional.pop.xlsx")
+
+#re-putting region names 
+library(tidyverse)
+t_interp_pop = as.data.frame(t_interp_pop)
+#first row as column names
+names(t_interp_pop) <- t_interp_pop %>% slice(1) %>% unlist()
+#cut the first row
+t_interp_pop <- t_interp_pop [- 1, ]
+
+
+
+
+-------------------
+-------------------------------------------------------------------------------
+#Philips and Sul's Club Convergence
+install.packages("mFilter")
+install.packages(ConvergenceClubs)
+library(ConvergenceClubs)
+library("mFilter")
+
+### Load GDP data
+data("GDP")
+
+### Filter data
+
+##take log
+logGDP <- log(GDP[,-1])
+##apply hp filter
+filteredGDP <- apply(logGDP, 1,
+function(x){mFilter::hpfilter(x, freq=400, type="lambda")$trend})
+##rename columns and rows
+filteredGDP <- data.frame(Region = GDP[,1], t(filteredGDP), stringsAsFactors=FALSE)
+colnames(filteredGDP) <- colnames(GDP)
+
+### log-t test over all units
+H <- computeH(filteredGDP[,-1], quantity = "H")
+round(estimateMod(H, time_trim=1/3, HACmethod = "FQSB"), 3)
+### t-value is < -1.65, reject null hypothesis of all units convergence
+
+### Cluster Countries using GDP from year 1970 to year 2003, with 2003 as reference year
+clubs <- findClubs(filteredGDP, dataCols=2:35, unit_names = 1, refCol=35,
+time_trim=1/3, cstar=0, HACmethod = 'FQSB')
+--------------------------------------------------
+##Materials of the Club Convergence package
+
+### shows the structure of the list for clubs
+str(clubs, give.attr=FALSE)
+### shows summary table with beta and t-values for all clubs
+summary(clubs)
+## Print results
+print(clubs)
+# Plot Transition Paths for all units in each club and average Transition Paths
+# for all clubs
+plot(clubs)
+# Plot Transition Paths
+plot(clubs, avgTP = FALSE, nrows = 4, ncols = 2, plot_args = list(type='l'))
+# Plot only average Transition Paths of each club
+plot(clubs, clubs=NULL, avgTP = TRUE, legend=TRUE, plot_args = list(type='o'))
+# Merge clusters using Phillips and Sul (2009) method
+mclubs <- mergeClubs(clubs, mergeMethod='PS')
+
+```{r}
+library(purrr)
+library(knitr)
+```
+
+
+
+
+
+---------------------------------------------------------------
+### Apply algorithm to EU -(flevoland&luxembourg)
+
+logGDPpercap <- log(EU_withoutNA[,-1])
+
+filteredGDPpercap <- apply(logGDPpercap, 1, function(x){mFilter::hpfilter(x, freq=400, type="lambda")$trend})
+
+filteredGDPpercap <- data.frame(Region = EU_withoutNA[,1], t(filteredGDPpercap), stringsAsFactors=FALSE)
+colnames(filteredGDPpercap) <- colnames(EU_withoutNA)
+
+H1 <- computeH(filteredGDPpercap[,-1], quantity = "H")
+round(estimateMod(H, time_trim=1/3, HACmethod = "FQSB"), 3)
+print(H1)
+clubs1 <- findClubs(filteredGDPpercap, dataCols=2:117, unit_names = 1, refCol=117,
+time_trim=1/3, cstar=0, HACmethod = 'FQSB')
+----------------------------------------------------
+## EU-flev algorithm application
+##take log
+logGDPpercap <- log(EU_flev[,-1])
+##apply filter
+filteredGDPpercap <- apply(logGDPpercap, 1, function(x){mFilter::hpfilter(x, freq=400, type="lambda")$trend})
+##rename rows and columns
+filteredGDPpercap <- data.frame(Region = EU_flev[,1], t(filteredGDPpercap), stringsAsFactors=FALSE)
+colnames(filteredGDPpercap) <- colnames(EU_flev)
+## check for overall convergence
+H1 <- computeH(filteredGDPpercap[,-1], quantity = "H")
+
+round(estimateMod(H1, time_trim=1/3, HACmethod = "FQSB"), 3)
+##find clubs
+clubs.century <- findClubs(filteredGDPpercap, dataCols=2:117, unit_names = 1, refCol=117,
+time_trim=1/3, cstar=0, HACmethod = 'FQSB')
+
+summary(clubs.century)
+
+
+-----------------------------------------------------------
+## EU-flev-extrapolated
+
+##take log
+logGDPpercap <- log(extrapolated_final[,-1])
+##apply filter
+filteredGDPpercap <- apply(logGDPpercap, 1, function(x){mFilter::hpfilter(x, freq=400, type="lambda")$trend})
+##rename rows and columns
+filteredGDPpercap <- data.frame(Region = extrapolated_final[,1], t(filteredGDPpercap), stringsAsFactors=FALSE)
+colnames(filteredGDPpercap) <- colnames(extrapolated_final)
+## check for overall convergence
+H2 <- computeH(filteredGDPpercap[,-1], quantity = "H")
+round(estimateMod(H2, time_trim=1/3, HACmethod = "FQSB"), 3)
+##find clubs
+clubs.1900_2015 <- findClubs(filteredGDPpercap, dataCols=2:117, unit_names = 1, refCol=117, time_trim=1/3, cstar=0, HACmethod = 'FQSB')
+-----------------------------------------
+
+
+
+
+-----------------------------------------
+### Classical Sigma and Beta Convergence Analysis (Package: REAT)
+
+
+##Install and library packages
+install.packages("REAT")
+library("REAT")
+library("dplyr")
+library(ggplot2)
+
+##Sigma convergence for multiple periods (Trend regression)
+sigma_trend_sd_log <- sigmaconv.t(EU_flev$"1900",1900,EU_flev[3:117],2015,sigma.measure = "sd",sigma.log = TRUE)
+##show results
+sigma_trend_sd_log
+
+##Sigma Linear trend regression (Material)
+sigma_trend_sd_log[["sigma.trend"]] %>% 
+     ggplot(aes(x = years, y = sigma.years)) +
+     geom_line(size=1, linetype = "dashed") + 
+     geom_smooth(method = lm) + 
+     theme_minimal() +
+     labs(subtitle = "SD[Log(GDP per capita)]",
+          x = "",
+          y = "")
+
+##Sigma Non-linear trend regression (Material)
+sigma_trend_sd_log[["sigma.trend"]] %>% 
+     ggplot(aes(x = years, y = sigma.years)) +
+     geom_line(size=1, linetype = "dashed") + 
+     geom_smooth() + 
+     theme_minimal() +
+     labs(subtitle = "SD[Log(GDP per capita)]",
+          x ="",          y = "")
+
+##Beta convergence
+betaconv_ols <- betaconv.ols (EU_flev$"1900",
+                               1900,
+                               EU_flev$"2015",
+                               2015,
+                               conditions = NULL, 
+                               beta.plot = TRUE,
+                               beta.plotLine = TRUE, 
+                               beta.plotLineCol = "red", 
+                               beta.plotX = "Ln (initial)", 
+                               beta.plotY = "Growth", 
+                               beta.plotTitle = "Beta convergence", 
+                               beta.bgrid = TRUE, 
+                               beta.bgridType = "solid", print.results = TRUE)
+                               
+
+------------------------------------------------------
+
+##print data frames to pdf
+
+library(gridExtra)
+ pdf("test.pdf", height=11, width=10)
+ grid.table(df)
+ dev.off()
+ 
+ 
+##print data frames to png
+
+library(gridExtra)
+png("test.png", height = 50*nrow(df), width = 200*ncol(df))
+grid.table(df)
+dev.off()
+
+##create multiple tables
+grid.arrange(
+     tableGrob(st1, theme=tt1),
+     tableGrob(st2, theme=tt1),
+     tableGrob(st3, theme=tt1),
+     tableGrob(st4, theme=tt1),
+     tableGrob(st5, theme=tt1),
+     nrow=2)
+     
+##list of clubs
+```{r}
+print(mclubs.2000_2015)
+
+```
+
+--------------------------------------------------
+#### beta coefficient for periods & Half-life
+
+betaconv_ols <- betaconv.ols (EU_flev$"1900",
+1900,
+EU_flev$"2015",
+2015,
+conditions = NULL,
+beta.plot = TRUE,
+beta.plotLine = TRUE,
+beta.plotLineCol = "red",
+beta.plotX = "Ln (initial)",
+beta.plotY = "Growth",
+beta.plotTitle = "Beta convergence",
+beta.bgrid = TRUE,
+beta.bgridType = "solid", print.results = TRUE)
+
+##Half-life
+install.packages("REAT")
+library("REAT")
+betaconv.speed(beta, tinterval)
+
+
+--------------------------------------------------------------
+##Merged clubs with 6,25 HP filter, convert to dataframe by row and clean
+
+df.prewar.row <- as.data.frame(do.call(rbind,mclub.prewar.625))
+df.prewar <- subset (df.prewar.row, select = -id)
+
