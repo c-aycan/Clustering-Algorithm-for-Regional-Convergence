@@ -8,20 +8,20 @@ growth based on their location.
 Objective: It is to understand why some regions are richer and others are less so in the long-run perspective. Testing whether capitals and borders matter 
 quantitatively when determining the regions' income performances.
 
-Technologies: R Studio
-dplyr
-tidyverse
-ConvergenceClubs
-mFilter
-imputeTS
-REAT
-ggplot2
-gridExtra
-spdep
-tmap
-sp
-sf
-rgeoda
-jmuOutlier
+Technologies: R Studio & libraries:
+dplyr,
+tidyverse,
+ConvergenceClubs,
+mFilter,
+imputeTS,
+REAT,
+ggplot2,
+gridExtra,
+spdep,
+tmap,
+sp,
+sf,
+rgeoda,
+jmuOutlier.
   
  
